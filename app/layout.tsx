@@ -1,4 +1,5 @@
 import { AppErrorBanner } from "@/components/AppErrorBanner";
+import { GlobalRuntimeGuard } from "@/components/GlobalRuntimeGuard";
 import type { Metadata, Viewport } from "next";
 import { PwaBoot } from "@/components/PwaBoot";
 import { StoreHydrator } from "@/components/StoreHydrator";
@@ -35,6 +36,7 @@ export default function RootLayout({
         </a>
         <StoreHydrator />
         <PwaBoot />
+        <GlobalRuntimeGuard />
         <AppErrorBanner />
         <div className="app-shell">{children}</div>
       </body>

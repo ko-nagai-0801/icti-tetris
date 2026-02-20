@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { clearRuntimeIssues, loadRuntimeIssues, type RuntimeIssue } from "@/lib/runtime-log";
 import { useAppStore } from "@/lib/store";
 
 export default function SettingsPage() {
@@ -11,6 +12,45 @@ export default function SettingsPage() {
   const clearAllData = useAppStore((state) => state.clearAllData);
 
   const [emergencyDraft, setEmergencyDraft] = useState(settings.emergencyNote);
+  const [runtimeIssues, setRuntimeIssues] = useState<RuntimeIssue[]>(() => loadRuntimeIssues());
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  const runtimeIssuePreview = useMemo((): string => {
+    const first = runtimeIssues[0];
+    if (!first) {
+      return "未記録";
+    }
+    const dt = new Date(first.createdAt);
+    return `${dt.toLocaleString("ja-JP")} / ${first.kind}`;
+  }, [runtimeIssues]);
+
+  const copyRuntimeIssues = async (): Promise<void> => {
+    if (runtimeIssues.length === 0) {
+      setCopyStatus("ログはありません。");
+      return;
+    }
+
+    const payload = JSON.stringify(runtimeIssues, null, 2);
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(payload);
+        setCopyStatus("技術ログをコピーしました。");
+        return;
+      }
+    } catch {
+      setCopyStatus("コピーに失敗しました。ブラウザの権限設定を確認してください。");
+      return;
+    }
+
+    setCopyStatus("このブラウザではクリップボードが利用できません。");
+  };
+
+  const resetRuntimeIssues = (): void => {
+    clearRuntimeIssues();
+    setRuntimeIssues([]);
+    setCopyStatus("技術ログを削除しました。");
+  };
+
   return (
     <main id="main-content" className="page">
       <header className="page-header">
@@ -57,6 +97,24 @@ export default function SettingsPage() {
             保存
           </button>
         </div>
+      </section>
+
+      <section className="card column" style={{ marginTop: "1rem" }}>
+        <h2>技術ログ（任意）</h2>
+        <p className="help">実行時エラーの簡易ログです。問い合わせ時にコピーして共有できます。</p>
+        <p className="help">件数: {runtimeIssues.length} / 最新: {runtimeIssuePreview}</p>
+        <div className="row">
+          <button type="button" className="btn-outline" onClick={() => void copyRuntimeIssues()}>
+            ログをコピー
+          </button>
+          <button type="button" className="btn-outline" onClick={resetRuntimeIssues}>
+            ログを削除
+          </button>
+          <button type="button" className="btn-outline" onClick={() => setRuntimeIssues(loadRuntimeIssues())}>
+            再読み込み
+          </button>
+        </div>
+        {copyStatus ? <p className="help">{copyStatus}</p> : null}
       </section>
 
       <section className="card column" style={{ marginTop: "1rem" }}>

@@ -10,8 +10,14 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:webkit": "playwright test --project=webkit",
+    "test:e2e:mobile": "playwright test --project=mobile-safari",
+    "test:e2e:release": "playwright test --project=chromium --project=webkit --project=mobile-safari",
     "test:all": "npm run test:unit && npm run test:e2e",
-    "audit:prod": "npm audit --omit=dev --audit-level=high"
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "audit:all": "npm audit --audit-level=high",
+    "release:check": "npm run lint && npm run typecheck && npm run test:all && npm run build && npm run audit:prod"
   },
   "dependencies": {
     "next": "^16.1.6",

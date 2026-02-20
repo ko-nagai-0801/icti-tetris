@@ -40,6 +40,7 @@ type AppState = {
   sessionStatus: SessionStatus;
   activeDraft: SessionDraft | null;
   clearError: () => void;
+  reportRuntimeError: (message: string) => void;
   hydrateFromStorage: () => void;
   startSession: () => void;
   acceptTerms: () => void;
@@ -104,6 +105,16 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   clearError: () => {
     set({ lastError: null });
+  },
+
+  reportRuntimeError: (message) => {
+    const normalized = message.trim();
+    if (normalized.length === 0) {
+      return;
+    }
+    set((state) => ({
+      lastError: state.lastError === normalized ? state.lastError : normalized
+    }));
   },
 
   hydrateFromStorage: () => {

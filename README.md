@@ -43,22 +43,37 @@ npm run lint
 npm run typecheck
 npm run test:unit
 npm run build
+npm run audit:prod
 ```
 
 ## E2E テスト
 
 ```bash
 # 初回はブラウザインストールが必要
-npx playwright install chromium
-npm run test:e2e -- --project=chromium
+npx playwright install chromium webkit
+npm run test:e2e:chromium
+npm run test:e2e:webkit
+npm run test:e2e:mobile
 ```
+
+一括実行:
+
+```bash
+npm run release:check
+```
+
+## セキュリティ運用
+
+- 2026-02-20 時点で `npm audit --omit=dev` は 0 件（high/critical 含む）です。
+- `npm audit`（開発依存を含む）には ESLint/Vitest 系の既知脆弱性が残る場合があります。
+- 現状の残件は実行環境が開発時に限定されるため、MVPリリース判定では `audit:prod` を必須ゲートにしています。
 
 ## CI
 
 GitHub Actions で以下を実行します。
 
 - Quality: lint / typecheck / unit test / build
-- E2E: Playwright (PR と手動実行)
+- E2E: Playwright Chromium + WebKit (PR と手動実行)
 - Security: `npm audit --omit=dev --audit-level=high`
 
 ## iOS運用メモ
@@ -75,4 +90,4 @@ GitHub Actions で以下を実行します。
 
 ## リリース手順
 
-詳細は `docs/RELEASE_CHECKLIST.md` を参照。
+詳細は `docs/RELEASE_CHECKLIST.md` と `docs/SECURITY_STATUS.md` を参照。
