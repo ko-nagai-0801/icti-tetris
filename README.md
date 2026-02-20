@@ -90,4 +90,4 @@ GitHub Actions で以下を実行します。
 
 ## リリース手順
 
-詳細は `docs/RELEASE_CHECKLIST.md` と `docs/SECURITY_STATUS.md` を参照。
+詳細は `docs/RELEASE_CHECKLIST.md`、`docs/SECURITY_STATUS.md`、`docs/IOS_DEVICE_QA.md` を参照。
