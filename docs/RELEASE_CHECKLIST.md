@@ -13,6 +13,7 @@
 3. Safari互換確認: `npm run test:e2e:webkit`
 4. iOS相当確認: `npm run test:e2e:mobile`
 5. `NEXT_PUBLIC_TETRIS_TARGET_SEC=120 npm run dev` で手動シナリオ確認
+6. iOS実機確認は `docs/IOS_DEVICE_QA.md` に沿って実施
 
 ## 3. 手動シナリオ（必須）
 
