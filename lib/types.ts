@@ -60,6 +60,16 @@ export type SessionStatus =
 
 export type CancelReason = "user" | "timeout" | "error";
 
+export const SESSION_PROGRESS_STATUSES = [
+  "INTRO",
+  "REACTIVATION",
+  "ROTATION_TASK",
+  "TETRIS_PLAY",
+  "CHECKOUT"
+] as const;
+
+export type SessionProgressStatus = (typeof SESSION_PROGRESS_STATUSES)[number];
+
 export type SessionDraft = {
   id: SessionId;
   createdAt: string;

@@ -8,6 +8,7 @@ import { SessionCheck } from "@/components/SessionCheck";
 import { SessionShell } from "@/components/SessionShell";
 import { TetrisCanvas } from "@/components/TetrisCanvas";
 import { useAppStore } from "@/lib/store";
+import { SESSION_PROGRESS_STATUSES } from "@/lib/types";
 
 const resolveTetrisTargetSec = (defaultSec: number): number => {
   const raw = process.env.NEXT_PUBLIC_TETRIS_TARGET_SEC;
@@ -41,6 +42,8 @@ export default function SessionPage() {
     askHelp: false
   });
 
+  const isInProgress = Boolean(draft) && SESSION_PROGRESS_STATUSES.some((step) => step === status);
+
   useEffect(() => {
     if (!hydrated) {
       return;
@@ -57,6 +60,39 @@ export default function SessionPage() {
     }
   }, [discardSession, draft, hydrated, router, status]);
 
+  useEffect(() => {
+    if (!isInProgress) {
+      return;
+    }
+
+    const confirmLeave = (): boolean => {
+      return window.confirm("セッションの途中です。中断してホームに戻りますか？");
+    };
+
+    const onBeforeUnload = (event: BeforeUnloadEvent): void => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    const onPopState = (): void => {
+      if (confirmLeave()) {
+        cancelSession("user");
+        router.push("/");
+        return;
+      }
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("popstate", onPopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [cancelSession, isInProgress, router]);
+
   const tetrisTargetSec = useMemo(() => {
     if (!draft) {
       return 1200;
@@ -67,6 +103,13 @@ export default function SessionPage() {
   const handleCancel = (): void => {
     cancelSession("user");
     router.push("/");
+  };
+
+  const handleSkipReactivation = (): void => {
+    const approved = window.confirm("短い思い出しをスキップして、回転ミニ課題へ進みますか？");
+    if (approved) {
+      finishReactivation();
+    }
   };
 
   if (!hydrated) {
@@ -177,7 +220,7 @@ export default function SessionPage() {
             key={draft.reactivationSec}
             seconds={draft.reactivationSec}
             onDone={finishReactivation}
-            onSkip={finishReactivation}
+            onSkip={handleSkipReactivation}
           />
         </SessionShell>
       </main>

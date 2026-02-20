@@ -1,8 +1,24 @@
-import type { AppSettings, AppStore, RotationAnswer, SessionRecord, TetrisStats } from "@/lib/types";
+import {
+  SESSION_PROGRESS_STATUSES,
+  type AppSettings,
+  type AppStore,
+  type RotationAnswer,
+  type SessionDraft,
+  type SessionProgressStatus,
+  type SessionRecord,
+  type TetrisStats
+} from "@/lib/types";
 
 const STORAGE_KEY = "icti-tetris-store-v1";
+const STORAGE_KEY_RUNTIME = "icti-tetris-runtime-v1";
 
-type PersistedStore = Pick<AppStore, "settings" | "sessions">;
+export type PersistedStore = Pick<AppStore, "settings" | "sessions">;
+
+export type PersistedRuntime = {
+  sessionStatus: SessionProgressStatus;
+  activeDraft: SessionDraft;
+  updatedAt: string;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null;
@@ -166,6 +182,69 @@ const parseSettings = (value: unknown): AppSettings | null => {
   };
 };
 
+const parseSessionDraft = (value: unknown): SessionDraft | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const {
+    id,
+    createdAt,
+    reactivationSec,
+    rotationQuestions,
+    tetrisTargetSec,
+    rotationAnswers,
+    rotationCorrectCount,
+    tetris
+  } = value;
+
+  if (
+    !isString(id) ||
+    !isString(createdAt) ||
+    !isFiniteNumber(reactivationSec) ||
+    !isFiniteNumber(rotationQuestions) ||
+    !isFiniteNumber(tetrisTargetSec) ||
+    !Array.isArray(rotationAnswers) ||
+    !isFiniteNumber(rotationCorrectCount)
+  ) {
+    return null;
+  }
+
+  const answers: RotationAnswer[] = rotationAnswers
+    .map((entry) => parseRotationAnswer(entry))
+    .filter((entry): entry is RotationAnswer => entry !== null);
+
+  let parsedTetris: TetrisStats | undefined;
+  if (typeof tetris !== "undefined") {
+    const maybeTetris = parseTetrisStats(tetris);
+    if (!maybeTetris) {
+      return null;
+    }
+    parsedTetris = maybeTetris;
+  }
+
+  return {
+    id,
+    createdAt,
+    reactivationSec: Math.floor(reactivationSec),
+    rotationQuestions: Math.max(1, Math.floor(rotationQuestions)),
+    tetrisTargetSec: Math.max(60, Math.floor(tetrisTargetSec)),
+    rotationAnswers: answers,
+    rotationCorrectCount: Math.max(0, Math.floor(rotationCorrectCount)),
+    tetris: parsedTetris
+  };
+};
+
+const parseSessionProgressStatus = (value: unknown): SessionProgressStatus | null => {
+  if (!isString(value)) {
+    return null;
+  }
+
+  return SESSION_PROGRESS_STATUSES.includes(value as SessionProgressStatus)
+    ? (value as SessionProgressStatus)
+    : null;
+};
+
 export const loadPersistedStore = (): PersistedStore | null => {
   if (typeof window === "undefined") {
     return null;
@@ -207,4 +286,59 @@ export const savePersistedStore = (store: PersistedStore): void => {
   }
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+};
+
+export const loadPersistedRuntime = (): PersistedRuntime | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(STORAGE_KEY_RUNTIME);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsedUnknown: unknown = JSON.parse(raw);
+    if (!isRecord(parsedUnknown)) {
+      return null;
+    }
+
+    const status = parseSessionProgressStatus(parsedUnknown.sessionStatus);
+    const draft = parseSessionDraft(parsedUnknown.activeDraft);
+    const updatedAt = parsedUnknown.updatedAt;
+
+    if (!status || !draft || !isString(updatedAt)) {
+      return null;
+    }
+
+    return {
+      sessionStatus: status,
+      activeDraft: draft,
+      updatedAt
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const savePersistedRuntime = (runtime: PersistedRuntime | null): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!runtime) {
+    window.localStorage.removeItem(STORAGE_KEY_RUNTIME);
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEY_RUNTIME, JSON.stringify(runtime));
+};
+
+export const clearPersistedRuntime = (): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(STORAGE_KEY_RUNTIME);
 };

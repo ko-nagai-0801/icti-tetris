@@ -17,7 +17,9 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string>("");
   const [answers, setAnswers] = useState<RotationAnswer[]>([]);
+  const [correctCount, setCorrectCount] = useState(0);
   const [feedback, setFeedback] = useState<AnswerFeedback>("idle");
+  const [revealed, setRevealed] = useState(false);
 
   const question = questions[index];
 
@@ -30,7 +32,7 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
   }
 
   const handleAnswer = (): void => {
-    if (!selected) {
+    if (!selected || revealed) {
       return;
     }
 
@@ -41,24 +43,29 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
       answeredAt: new Date().toISOString()
     };
 
-    const nextAnswers = [...answers, answer];
-    setAnswers(nextAnswers);
+    setAnswers((prev) => [...prev, answer]);
+    if (isCorrect) {
+      setCorrectCount((prev) => prev + 1);
+    }
     setFeedback(isCorrect ? "correct" : "incorrect");
+    setRevealed(true);
+  };
 
-    const isLast = index === questions.length - 1;
-    if (isLast) {
-      const correctCount = nextAnswers.filter((entry) => entry.isCorrect).length;
-      window.setTimeout(() => {
-        onComplete(nextAnswers, correctCount);
-      }, 250);
+  const handleNext = (): void => {
+    if (!revealed) {
       return;
     }
 
-    window.setTimeout(() => {
-      setIndex((prev) => prev + 1);
-      setSelected("");
-      setFeedback("idle");
-    }, 380);
+    const isLast = index === questions.length - 1;
+    if (isLast) {
+      onComplete(answers, correctCount);
+      return;
+    }
+
+    setIndex((prev) => prev + 1);
+    setSelected("");
+    setFeedback("idle");
+    setRevealed(false);
   };
 
   return (
@@ -72,22 +79,29 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
 
       <p className="help">指示: {question.targetLabel}</p>
 
-      <div className="row" style={{ alignItems: "flex-start" }}>
+      <div className="rotation-target-wrap">
         <div className="column" style={{ minWidth: 140 }}>
-          <strong>基準の形</strong>
+          <strong>基準</strong>
           <ShapeMatrix matrix={question.base} />
+        </div>
+        <div className="rotation-arrow">→</div>
+        <div className="column" style={{ minWidth: 140 }}>
+          <strong>目標の向き</strong>
+          <ShapeMatrix matrix={question.targetMatrix} />
         </div>
       </div>
 
       <div className="rotation-options">
         {question.options.map((option) => {
           const isActive = selected === option.id;
+          const disabled = revealed;
           return (
             <button
               key={option.id}
               type="button"
               className={`rotation-option ${isActive ? "active" : ""}`}
               onClick={() => setSelected(option.id)}
+              disabled={disabled}
             >
               <strong>{option.label}</strong>
               <ShapeMatrix matrix={option.matrix} />
@@ -97,11 +111,20 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
       </div>
 
       <div className="row">
-        <button type="button" className="btn-primary" onClick={handleAnswer} disabled={!selected}>
-          {index === questions.length - 1 ? "回答して終了" : "回答する"}
-        </button>
+        {!revealed ? (
+          <button type="button" className="btn-primary" onClick={handleAnswer} disabled={!selected}>
+            判定する
+          </button>
+        ) : (
+          <button type="button" className="btn-primary" onClick={handleNext}>
+            {index === questions.length - 1 ? "結果を確定" : "次の問題へ"}
+          </button>
+        )}
+
         {feedback !== "idle" ? <span>{feedback === "correct" ? "正解" : "不正解"}</span> : null}
       </div>
+
+      {revealed ? <p className="help">解説: {question.explanation}</p> : null}
     </div>
   );
 }

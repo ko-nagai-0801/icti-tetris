@@ -1,10 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { PwaBoot } from "@/components/PwaBoot";
 import { StoreHydrator } from "@/components/StoreHydrator";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "ICTI Tetris Protocol",
-  description: "Guided protocol session with rotation task and Tetris"
+  description: "Guided protocol session with rotation task and Tetris",
+  applicationName: "ICTI Tetris",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ICTI Tetris"
+  }
 };
 
 export const viewport: Viewport = {
@@ -22,6 +30,7 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <StoreHydrator />
+        <PwaBoot />
         <div className="app-shell">{children}</div>
       </body>
     </html>

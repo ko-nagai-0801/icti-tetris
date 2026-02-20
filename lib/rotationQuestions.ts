@@ -8,6 +8,8 @@ export type RotationQuestion = {
   id: string;
   title: string;
   targetLabel: string;
+  targetMatrix: number[][];
+  explanation: string;
   base: number[][];
   options: RotationOption[];
   correctOptionId: string;
@@ -70,12 +72,14 @@ const buildQuestion = ({
   id,
   title,
   targetLabel,
+  explanation,
   base,
   options
 }: {
   id: string;
   title: string;
   targetLabel: string;
+  explanation: string;
   base: number[][];
   options: [QuestionOption, QuestionOption, QuestionOption, QuestionOption];
 }): RotationQuestion => {
@@ -92,6 +96,8 @@ const buildQuestion = ({
     id,
     title,
     targetLabel,
+    targetMatrix: clone(normalizedOptions[correctOptionIndex]?.matrix ?? base),
+    explanation,
     base: clone(base),
     options: normalizedOptions,
     correctOptionId: normalizedOptions[correctOptionIndex]?.id ?? normalizedOptions[0]?.id ?? ""
@@ -103,6 +109,7 @@ const QUESTIONS: RotationQuestion[] = [
     id: "q1",
     title: "問題1",
     targetLabel: "L字を右に90°回転した結果を選ぶ",
+    explanation: "右回転1回で、縦の棒が右側に回ります。空きが左上に残る向きが目印です。",
     base: L_SHAPE,
     options: [
       { matrix: rotateTimes(L_SHAPE, 0), isCorrect: false },
@@ -115,6 +122,7 @@ const QUESTIONS: RotationQuestion[] = [
     id: "q2",
     title: "問題2",
     targetLabel: "Z字を右に90°回転した結果を選ぶ",
+    explanation: "Z字は90°回転で縦向きになります。左右反転の形と混同しないのがポイントです。",
     base: Z_SHAPE,
     options: [
       { matrix: rotateTimes(Z_SHAPE, 0), isCorrect: false },
@@ -127,6 +135,7 @@ const QUESTIONS: RotationQuestion[] = [
     id: "q3",
     title: "問題3",
     targetLabel: "T字を右に270°回転した結果を選ぶ",
+    explanation: "右に270°は左に90°と同じです。中央の突起が左向きになる形が正解です。",
     base: T_SHAPE,
     options: [
       { matrix: rotateTimes(T_SHAPE, 2), isCorrect: false },

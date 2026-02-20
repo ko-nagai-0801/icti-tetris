@@ -1,11 +1,13 @@
 import { create } from "zustand";
-import { loadPersistedStore, savePersistedStore } from "@/lib/persist";
+import { clearPersistedRuntime, loadPersistedRuntime, loadPersistedStore, savePersistedRuntime, savePersistedStore } from "@/lib/persist";
 import {
+  SESSION_PROGRESS_STATUSES,
   DEFAULT_SETTINGS,
   type AppSettings,
   type CancelReason,
   type RotationAnswer,
   type SessionDraft,
+  type SessionProgressStatus,
   type SessionId,
   type SessionRecord,
   type SessionStatus,
@@ -59,6 +61,23 @@ const persist = (payload: SavePayload): void => {
   savePersistedStore(payload);
 };
 
+const isSessionProgressStatus = (status: SessionStatus): status is SessionProgressStatus => {
+  return SESSION_PROGRESS_STATUSES.includes(status as SessionProgressStatus);
+};
+
+const persistRuntime = (sessionStatus: SessionStatus, activeDraft: SessionDraft | null): void => {
+  if (!isSessionProgressStatus(sessionStatus) || !activeDraft) {
+    clearPersistedRuntime();
+    return;
+  }
+
+  savePersistedRuntime({
+    sessionStatus,
+    activeDraft,
+    updatedAt: new Date().toISOString()
+  });
+};
+
 export const useAppStore = create<AppState>((set, get) => ({
   hydrated: false,
   settings: DEFAULT_SETTINGS,
@@ -68,15 +87,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   hydrateFromStorage: () => {
     const loaded = loadPersistedStore();
-    if (loaded) {
-      set({
-        settings: loaded.settings,
-        sessions: loaded.sessions,
-        hydrated: true
-      });
-      return;
-    }
-    set({ hydrated: true });
+    const runtime = loadPersistedRuntime();
+    set({
+      settings: loaded?.settings ?? DEFAULT_SETTINGS,
+      sessions: loaded?.sessions ?? [],
+      sessionStatus: runtime?.sessionStatus ?? "IDLE",
+      activeDraft: runtime?.activeDraft ?? null,
+      hydrated: true
+    });
   },
 
   startSession: () => {
@@ -95,6 +113,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessionStatus: "INTRO",
       activeDraft: draft
     });
+    persistRuntime("INTRO", draft);
   },
 
   acceptTerms: () => {
@@ -103,6 +122,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
     set({ sessionStatus: "REACTIVATION" });
+    persistRuntime("REACTIVATION", current.activeDraft);
   },
 
   finishReactivation: () => {
@@ -111,6 +131,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
     set({ sessionStatus: "ROTATION_TASK" });
+    persistRuntime("ROTATION_TASK", current.activeDraft);
   },
 
   setRotationResult: (answers, correctCount) => {
@@ -127,6 +148,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
       sessionStatus: "TETRIS_PLAY"
     });
+    persistRuntime("TETRIS_PLAY", {
+      ...current.activeDraft,
+      rotationAnswers: answers,
+      rotationCorrectCount: Math.max(0, Math.floor(correctCount))
+    });
   },
 
   setTetrisStats: (stats) => {
@@ -135,13 +161,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
+    const nextDraft: SessionDraft = {
+      ...current.activeDraft,
+      tetris: stats
+    };
     set({
-      activeDraft: {
-        ...current.activeDraft,
-        tetris: stats
-      },
+      activeDraft: nextDraft,
       sessionStatus: "CHECKOUT"
     });
+    persistRuntime("CHECKOUT", nextDraft);
   },
 
   saveSessionCheck: (input) => {
@@ -181,6 +209,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       settings: current.settings,
       sessions
     });
+    clearPersistedRuntime();
   },
 
   cancelSession: (reason = "user") => {
@@ -189,6 +218,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessionStatus: "CANCELLED",
       activeDraft: null
     });
+    clearPersistedRuntime();
   },
 
   discardSession: () => {
@@ -196,6 +226,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessionStatus: "IDLE",
       activeDraft: null
     });
+    clearPersistedRuntime();
   },
 
   updateReactivationSec: (seconds) => {
@@ -226,6 +257,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessionStatus: "IDLE"
     });
     persist({ settings: DEFAULT_SETTINGS, sessions: [] });
+    clearPersistedRuntime();
   },
 
   deleteSession: (id) => {

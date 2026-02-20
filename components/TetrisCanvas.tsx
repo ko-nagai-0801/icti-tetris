@@ -21,6 +21,15 @@ type TetrisCanvasProps = {
   onFinish: (stats: TetrisStats, reason: FinishReason) => void;
 };
 
+type TouchGestureStart = {
+  x: number;
+  y: number;
+  startedAt: number;
+  touchCount: 1 | 2;
+  moved: boolean;
+  longPressTriggered: boolean;
+};
+
 const formatClock = (sec: number): string => {
   const minutes = Math.floor(sec / 60);
   const seconds = sec % 60;
@@ -37,6 +46,8 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
   const lastHudRef = useRef<number>(0);
   const finishedRef = useRef(false);
   const onFinishRef = useRef(onFinish);
+  const touchGestureRef = useRef<TouchGestureStart | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
 
   const [hud, setHud] = useState<HudState>({
     remainingSec: targetSec,
@@ -49,6 +60,13 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
   useEffect(() => {
     onFinishRef.current = onFinish;
   }, [onFinish]);
+
+  const clearLongPressTimer = useCallback((): void => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
 
   const getElapsedSec = useCallback((now: number): number => {
     if (startMsRef.current <= 0) {
@@ -195,8 +213,9 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
       }
+      clearLongPressTimer();
     };
-  }, [finish, getRemaining, redraw, syncHud, targetSec]);
+  }, [clearLongPressTimer, finish, getRemaining, redraw, syncHud, targetSec]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -246,10 +265,151 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
     };
   }, [applyEngine]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    const getCenter = (touches: TouchList): { x: number; y: number } => {
+      if (touches.length >= 2) {
+        const first = touches[0];
+        const second = touches[1];
+        return {
+          x: (first.clientX + second.clientX) / 2,
+          y: (first.clientY + second.clientY) / 2
+        };
+      }
+      const touch = touches[0];
+      return {
+        x: touch.clientX,
+        y: touch.clientY
+      };
+    };
+
+    const onTouchStart = (event: TouchEvent): void => {
+      if (finishedRef.current || event.touches.length === 0) {
+        return;
+      }
+
+      clearLongPressTimer();
+      const center = getCenter(event.touches);
+      const touchCount: 1 | 2 = event.touches.length >= 2 ? 2 : 1;
+      touchGestureRef.current = {
+        x: center.x,
+        y: center.y,
+        startedAt: performance.now(),
+        touchCount,
+        moved: false,
+        longPressTriggered: false
+      };
+
+      if (touchCount === 1) {
+        longPressTimerRef.current = window.setTimeout(() => {
+          const current = touchGestureRef.current;
+          if (!current || current.touchCount !== 1 || current.moved) {
+            return;
+          }
+          current.longPressTriggered = true;
+          applyEngine(holdActive(engineRef.current));
+        }, 420);
+      }
+
+      event.preventDefault();
+    };
+
+    const onTouchMove = (event: TouchEvent): void => {
+      const current = touchGestureRef.current;
+      if (!current || event.touches.length === 0) {
+        return;
+      }
+
+      const center = getCenter(event.touches);
+      const dx = center.x - current.x;
+      const dy = center.y - current.y;
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        current.moved = true;
+        clearLongPressTimer();
+      }
+
+      event.preventDefault();
+    };
+
+    const onTouchEnd = (event: TouchEvent): void => {
+      const current = touchGestureRef.current;
+      if (!current) {
+        return;
+      }
+
+      clearLongPressTimer();
+
+      if (current.longPressTriggered) {
+        touchGestureRef.current = null;
+        event.preventDefault();
+        return;
+      }
+
+      const durationMs = performance.now() - current.startedAt;
+
+      if (current.touchCount === 2) {
+        if (durationMs < 280 && !current.moved) {
+          applyEngine(rotateActive(engineRef.current, "CCW"));
+        }
+        touchGestureRef.current = null;
+        event.preventDefault();
+        return;
+      }
+
+      const changed = event.changedTouches[0];
+      if (!changed) {
+        touchGestureRef.current = null;
+        return;
+      }
+
+      const dx = changed.clientX - current.x;
+      const dy = changed.clientY - current.y;
+
+      if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy)) {
+        const steps = Math.max(1, Math.min(3, Math.floor(Math.abs(dx) / 32)));
+        let nextState = engineRef.current;
+        const direction = dx < 0 ? -1 : 1;
+        for (let i = 0; i < steps; i += 1) {
+          nextState = moveHorizontal(nextState, direction);
+        }
+        applyEngine(nextState);
+      } else if (dy > 36 && Math.abs(dy) > Math.abs(dx)) {
+        applyEngine(hardDrop(engineRef.current));
+      } else if (durationMs < 280) {
+        applyEngine(rotateActive(engineRef.current, "CW"));
+      }
+
+      touchGestureRef.current = null;
+      event.preventDefault();
+    };
+
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", onTouchEnd, { passive: false });
+
+    return () => {
+      clearLongPressTimer();
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
+      canvas.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [applyEngine, clearLongPressTimer]);
+
   return (
     <div className="tetris-wrap card">
       <p className="help">速さより、回転してフィットさせることに集中します。</p>
-      <canvas ref={canvasRef} className="tetris-canvas" aria-label="Tetris Game" />
+      <canvas
+        ref={canvasRef}
+        className="tetris-canvas"
+        aria-label="Tetris Game"
+        onContextMenu={(event) => event.preventDefault()}
+      />
 
       <div className="stats-grid">
         <div className="stat">残り時間: {formatClock(hud.remainingSec)}</div>
@@ -326,7 +486,10 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           <strong>回転:</strong> Z = 左回転, X or ↑ = 右回転, C = HOLD
         </div>
         <div className="tetris-guide-row">
-          <strong>スマホ:</strong> 画面下のボタン操作を推奨（iOS想定）
+          <strong>スマホ:</strong> タップ=右回転, 2本指タップ=左回転, 長押し=HOLD
+        </div>
+        <div className="tetris-guide-row">
+          <strong>ジェスチャ:</strong> 左右スワイプ=移動, 下スワイプ=ハードドロップ
         </div>
       </div>
 
