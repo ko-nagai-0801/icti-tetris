@@ -20,6 +20,15 @@ export type PersistedRuntime = {
   updatedAt: string;
 };
 
+export type PersistWriteResult =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null;
 };
@@ -250,7 +259,13 @@ export const loadPersistedStore = (): PersistedStore | null => {
     return null;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+
   if (!raw) {
     return null;
   }
@@ -280,12 +295,20 @@ export const loadPersistedStore = (): PersistedStore | null => {
   }
 };
 
-export const savePersistedStore = (store: PersistedStore): void => {
+export const savePersistedStore = (store: PersistedStore): PersistWriteResult => {
   if (typeof window === "undefined") {
-    return;
+    return { ok: true };
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "保存に失敗しました。ブラウザのストレージ設定を確認してください。"
+    };
+  }
 };
 
 export const loadPersistedRuntime = (): PersistedRuntime | null => {
@@ -293,7 +316,13 @@ export const loadPersistedRuntime = (): PersistedRuntime | null => {
     return null;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY_RUNTIME);
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY_RUNTIME);
+  } catch {
+    return null;
+  }
+
   if (!raw) {
     return null;
   }
@@ -322,23 +351,38 @@ export const loadPersistedRuntime = (): PersistedRuntime | null => {
   }
 };
 
-export const savePersistedRuntime = (runtime: PersistedRuntime | null): void => {
+export const savePersistedRuntime = (runtime: PersistedRuntime | null): PersistWriteResult => {
   if (typeof window === "undefined") {
-    return;
+    return { ok: true };
   }
 
-  if (!runtime) {
-    window.localStorage.removeItem(STORAGE_KEY_RUNTIME);
-    return;
+  try {
+    if (!runtime) {
+      window.localStorage.removeItem(STORAGE_KEY_RUNTIME);
+      return { ok: true };
+    }
+    window.localStorage.setItem(STORAGE_KEY_RUNTIME, JSON.stringify(runtime));
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "セッション下書きの保存に失敗しました。"
+    };
   }
-
-  window.localStorage.setItem(STORAGE_KEY_RUNTIME, JSON.stringify(runtime));
 };
 
-export const clearPersistedRuntime = (): void => {
+export const clearPersistedRuntime = (): PersistWriteResult => {
   if (typeof window === "undefined") {
-    return;
+    return { ok: true };
   }
 
-  window.localStorage.removeItem(STORAGE_KEY_RUNTIME);
+  try {
+    window.localStorage.removeItem(STORAGE_KEY_RUNTIME);
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "セッション下書きの削除に失敗しました。"
+    };
+  }
 };

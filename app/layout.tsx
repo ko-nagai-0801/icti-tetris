@@ -1,3 +1,4 @@
+import { AppErrorBanner } from "@/components/AppErrorBanner";
 import type { Metadata, Viewport } from "next";
 import { PwaBoot } from "@/components/PwaBoot";
 import { StoreHydrator } from "@/components/StoreHydrator";
@@ -29,8 +30,12 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
+        <a href="#main-content" className="skip-link">
+          本文へスキップ
+        </a>
         <StoreHydrator />
         <PwaBoot />
+        <AppErrorBanner />
         <div className="app-shell">{children}</div>
       </body>
     </html>

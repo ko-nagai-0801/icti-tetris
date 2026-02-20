@@ -30,6 +30,22 @@ a {
   text-decoration: none;
 }
 
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -40px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  z-index: 999;
+}
+
+.skip-link:focus {
+  top: 0.7rem;
+}
+
 .app-shell {
   min-height: 100vh;
 }
@@ -127,6 +143,15 @@ button:disabled {
   cursor: not-allowed;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 button:hover:not(:disabled),
 .button:hover {
   transform: translateY(-1px);
@@ -146,6 +171,20 @@ button:hover:not(:disabled),
 .btn-danger {
   background: #c24646;
   color: #fff;
+}
+
+.error-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.6rem 0.9rem;
+  background: #fff1f1;
+  border-bottom: 1px solid #c24646;
+  color: #7a2e2e;
 }
 
 label {
@@ -210,6 +249,12 @@ input[type="range"] {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+}
+
+.settings-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6rem;
 }
 
 .timer-value {

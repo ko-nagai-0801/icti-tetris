@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit --incremental false",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test:unit && npm run test:e2e",
     "audit:prod": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
@@ -17,11 +20,13 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/node": "20.16.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "^1.6.1"
   }
 }

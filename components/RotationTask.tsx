@@ -102,6 +102,8 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
               className={`rotation-option ${isActive ? "active" : ""}`}
               onClick={() => setSelected(option.id)}
               disabled={disabled}
+              data-testid={`rotation-option-${option.label.toLowerCase()}`}
+              aria-label={`選択肢 ${option.label}`}
             >
               <strong>{option.label}</strong>
               <ShapeMatrix matrix={option.matrix} />
@@ -112,11 +114,17 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
 
       <div className="row">
         {!revealed ? (
-          <button type="button" className="btn-primary" onClick={handleAnswer} disabled={!selected}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleAnswer}
+            disabled={!selected}
+            data-testid="rotation-submit-button"
+          >
             判定する
           </button>
         ) : (
-          <button type="button" className="btn-primary" onClick={handleNext}>
+          <button type="button" className="btn-primary" onClick={handleNext} data-testid="rotation-next-button">
             {index === questions.length - 1 ? "結果を確定" : "次の問題へ"}
           </button>
         )}

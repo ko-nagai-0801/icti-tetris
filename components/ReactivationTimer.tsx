@@ -36,14 +36,23 @@ export function ReactivationTimer({ seconds, onDone, onSkip }: ReactivationTimer
       <p className="help">
         ここは「短い思い出し」の工程です。出来事を少しだけ思い浮かべ、詳細を追わないまま次へ進みます。
       </p>
-      <p className="timer-value">{remaining}</p>
+      <p className="timer-value" aria-live="polite" data-testid="reactivation-seconds">
+        {remaining}
+      </p>
       <p className="help">秒</p>
-      <div className="timer-progress" aria-hidden="true">
+      <div
+        className="timer-progress"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+        aria-label="短い思い出しの進捗"
+      >
         <div className="timer-progress-fill" style={{ width: `${progress}%` }} />
       </div>
       <p className="help">つらくなったら右上の「中断」を押してください。</p>
       <div className="row">
-        <button type="button" className="btn-outline" onClick={onSkip}>
+        <button type="button" className="btn-outline" onClick={onSkip} data-testid="reactivation-skip-button">
           次へ進む（スキップ）
         </button>
       </div>

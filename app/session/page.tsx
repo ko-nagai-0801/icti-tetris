@@ -114,7 +114,7 @@ export default function SessionPage() {
 
   if (!hydrated) {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <div className="card">読み込み中…</div>
       </main>
     );
@@ -122,7 +122,7 @@ export default function SessionPage() {
 
   if (!draft) {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <div className="card column">
           <p>進行中のセッションがありません。</p>
           <button type="button" className="btn-primary" onClick={() => router.push("/")}>
@@ -138,7 +138,7 @@ export default function SessionPage() {
     const checkedCount = Number(introChecks.okToStop) + Number(introChecks.dontDig) + Number(introChecks.askHelp);
 
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <SessionShell title="セッション導入" stepLabel="1 / 5: 注意事項" onCancel={handleCancel}>
           <div className="card">
             <div className="row" style={{ justifyContent: "space-between", marginBottom: "0.6rem" }}>
@@ -146,6 +146,8 @@ export default function SessionPage() {
               <button
                 type="button"
                 className="btn-outline"
+                data-testid="intro-toggle-all-button"
+                aria-pressed={allChecked}
                 onClick={() =>
                   setIntroChecks({
                     okToStop: !allChecked,
@@ -202,7 +204,13 @@ export default function SessionPage() {
               </label>
             </div>
             <div className="row" style={{ marginTop: "1rem" }}>
-              <button type="button" className="btn-primary" onClick={acceptTerms} disabled={!allChecked}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={acceptTerms}
+                disabled={!allChecked}
+                data-testid="intro-start-button"
+              >
                 開始
               </button>
             </div>
@@ -214,7 +222,7 @@ export default function SessionPage() {
 
   if (status === "REACTIVATION") {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <SessionShell title="短い思い出し（再活性化）" stepLabel="2 / 5: 20〜40秒の準備" onCancel={handleCancel}>
           <ReactivationTimer
             key={draft.reactivationSec}
@@ -229,7 +237,7 @@ export default function SessionPage() {
 
   if (status === "ROTATION_TASK") {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <SessionShell title="回転ミニ課題" stepLabel="3 / 5: 3問" onCancel={handleCancel}>
           <RotationTask questionCount={draft.rotationQuestions} onComplete={setRotationResult} />
         </SessionShell>
@@ -239,7 +247,7 @@ export default function SessionPage() {
 
   if (status === "TETRIS_PLAY") {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <SessionShell title="テトリス" stepLabel="4 / 5: 約20分" onCancel={handleCancel}>
           <TetrisCanvas
             targetSec={tetrisTargetSec}
@@ -254,7 +262,7 @@ export default function SessionPage() {
 
   if (status === "CHECKOUT") {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <SessionShell title="セッション後チェック" stepLabel="5 / 5: 記録" onCancel={handleCancel}>
           <SessionCheck
             onSave={(input) => {
@@ -272,7 +280,7 @@ export default function SessionPage() {
   }
 
   return (
-    <main className="page">
+    <main id="main-content" className="page">
       <div className="card">状態の読み込み中です。</div>
     </main>
   );

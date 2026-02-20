@@ -50,6 +50,7 @@ export function SessionCheck({ onSave, onDiscard }: SessionCheckProps) {
         step={1}
         value={mood}
         onChange={(event) => setMood(Number(event.target.value))}
+        data-testid="checkout-mood-slider"
       />
 
       <label htmlFor="vividness">記憶の鮮明さ: {vividness}</label>
@@ -61,6 +62,7 @@ export function SessionCheck({ onSave, onDiscard }: SessionCheckProps) {
         step={1}
         value={vividness}
         onChange={(event) => setVividness(Number(event.target.value))}
+        data-testid="checkout-vividness-slider"
       />
 
       <label htmlFor="flashback">今日のフラッシュバック回数（任意: 0-20）</label>
@@ -73,10 +75,11 @@ export function SessionCheck({ onSave, onDiscard }: SessionCheckProps) {
         placeholder="未入力でもOK"
         value={flashbackRaw}
         onChange={(event) => setFlashbackRaw(event.target.value)}
+        data-testid="checkout-flashback-input"
       />
 
       <div className="row">
-        <button type="button" className="btn-primary" onClick={handleSave}>
+        <button type="button" className="btn-primary" onClick={handleSave} data-testid="checkout-save-button">
           保存して完了
         </button>
         <button type="button" className="btn-outline" onClick={onDiscard}>

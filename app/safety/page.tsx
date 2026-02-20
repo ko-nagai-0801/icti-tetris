@@ -10,7 +10,7 @@ export default function SafetyPage() {
   const [draft, setDraft] = useState(emergencyNote);
 
   return (
-    <main className="page">
+    <main id="main-content" className="page">
       <header className="page-header">
         <div>
           <h1 className="page-title">中断・相談</h1>

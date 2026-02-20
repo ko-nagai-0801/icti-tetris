@@ -134,7 +134,7 @@ export default function LogsPage() {
   };
 
   return (
-    <main className="page">
+    <main id="main-content" className="page">
       <header className="page-header">
         <div>
           <h1 className="page-title">記録</h1>

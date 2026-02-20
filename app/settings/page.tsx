@@ -12,7 +12,7 @@ export default function SettingsPage() {
 
   const [emergencyDraft, setEmergencyDraft] = useState(settings.emergencyNote);
   return (
-    <main className="page">
+    <main id="main-content" className="page">
       <header className="page-header">
         <div>
           <h1 className="page-title">設定</h1>
@@ -25,7 +25,9 @@ export default function SettingsPage() {
 
       <section className="card column">
         <h2>再活性化秒数</h2>
-        <div className="row">
+        <fieldset className="settings-fieldset">
+          <legend className="help">短い思い出しの時間</legend>
+          <div className="row">
           {[20, 30, 40].map((seconds) => (
             <label key={seconds} className="check-item">
               <input
@@ -33,11 +35,13 @@ export default function SettingsPage() {
                 name="reactivationSec"
                 checked={settings.reactivationSec === seconds}
                 onChange={() => updateReactivationSec(seconds as 20 | 30 | 40)}
+                data-testid={`settings-reactivation-${seconds}`}
               />
               {seconds}秒
             </label>
           ))}
-        </div>
+          </div>
+        </fieldset>
       </section>
 
       <section className="card column" style={{ marginTop: "1rem" }}>

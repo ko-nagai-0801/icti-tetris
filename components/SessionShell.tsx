@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 type SessionShellProps = {
   title: string;
@@ -10,6 +10,8 @@ type SessionShellProps = {
 };
 
 export function SessionShell({ title, stepLabel, onCancel, children }: SessionShellProps) {
+  const titleId = useId();
+
   const handleCancel = (): void => {
     const approved = window.confirm("セッションを中断してホームに戻りますか？このセッション内容は保存されません。");
     if (approved) {
@@ -18,11 +20,15 @@ export function SessionShell({ title, stepLabel, onCancel, children }: SessionSh
   };
 
   return (
-    <section className="session-shell">
+    <section className="session-shell" aria-labelledby={titleId}>
       <header className="session-shell-header">
         <div>
-          <h2 className="page-title">{title}</h2>
-          <p className="session-step">{stepLabel}</p>
+          <h2 id={titleId} className="page-title">
+            {title}
+          </h2>
+          <p className="session-step" aria-live="polite">
+            {stepLabel}
+          </p>
         </div>
         <button type="button" className="btn-danger" onClick={handleCancel}>
           中断

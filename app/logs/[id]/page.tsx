@@ -16,7 +16,7 @@ export default function SessionDetailPage() {
 
   if (!session) {
     return (
-      <main className="page">
+      <main id="main-content" className="page">
         <div className="card column">
           <p>対象のセッションが見つかりませんでした。</p>
           <Link href="/logs" className="button btn-outline">
@@ -28,7 +28,7 @@ export default function SessionDetailPage() {
   }
 
   return (
-    <main className="page">
+    <main id="main-content" className="page">
       <header className="page-header">
         <div>
           <h1 className="page-title">セッション詳細</h1>

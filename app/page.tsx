@@ -34,7 +34,7 @@ export default function HomePage() {
   const canStart = hydrated;
 
   return (
-    <main className="page">
+    <main id="main-content" className="page">
       <header className="page-header">
         <div>
           <h1 className="page-title">ICTI手順 テトリス＋プロトコル</h1>
@@ -61,7 +61,13 @@ export default function HomePage() {
               </button>
             </div>
           ) : null}
-          <button type="button" className="btn-primary" onClick={handleStart} disabled={!canStart}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleStart}
+            disabled={!canStart}
+            data-testid="home-start-session-button"
+          >
             {hasInProgress ? "新規セッション開始（途中分を破棄）" : "セッション開始"}
           </button>
           {!hydrated ? <p className="help">データを読み込み中です…</p> : null}

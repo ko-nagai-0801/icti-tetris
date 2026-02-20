@@ -1,5 +1,12 @@
 import { create } from "zustand";
-import { clearPersistedRuntime, loadPersistedRuntime, loadPersistedStore, savePersistedRuntime, savePersistedStore } from "@/lib/persist";
+import {
+  clearPersistedRuntime,
+  loadPersistedRuntime,
+  loadPersistedStore,
+  savePersistedRuntime,
+  savePersistedStore,
+  type PersistWriteResult
+} from "@/lib/persist";
 import {
   SESSION_PROGRESS_STATUSES,
   DEFAULT_SETTINGS,
@@ -7,8 +14,8 @@ import {
   type CancelReason,
   type RotationAnswer,
   type SessionDraft,
-  type SessionProgressStatus,
   type SessionId,
+  type SessionProgressStatus,
   type SessionRecord,
   type SessionStatus,
   type TetrisStats
@@ -27,10 +34,12 @@ type SessionCheckInput = {
 
 type AppState = {
   hydrated: boolean;
+  lastError: string | null;
   settings: AppSettings;
   sessions: SessionRecord[];
   sessionStatus: SessionStatus;
   activeDraft: SessionDraft | null;
+  clearError: () => void;
   hydrateFromStorage: () => void;
   startSession: () => void;
   acceptTerms: () => void;
@@ -57,21 +66,28 @@ const createSessionId = (): string => {
   return `sess_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
 };
 
-const persist = (payload: SavePayload): void => {
-  savePersistedStore(payload);
+const toError = (result: PersistWriteResult): string | null => {
+  return result.ok ? null : result.error;
+};
+
+const mergeErrors = (...errors: Array<string | null>): string | null => {
+  return errors.find((entry): entry is string => typeof entry === "string" && entry.length > 0) ?? null;
+};
+
+const persistStore = (payload: SavePayload): PersistWriteResult => {
+  return savePersistedStore(payload);
 };
 
 const isSessionProgressStatus = (status: SessionStatus): status is SessionProgressStatus => {
-  return SESSION_PROGRESS_STATUSES.includes(status as SessionProgressStatus);
+  return SESSION_PROGRESS_STATUSES.some((step) => step === status);
 };
 
-const persistRuntime = (sessionStatus: SessionStatus, activeDraft: SessionDraft | null): void => {
-  if (!isSessionProgressStatus(sessionStatus) || !activeDraft) {
-    clearPersistedRuntime();
-    return;
+const persistRuntime = (sessionStatus: SessionStatus, activeDraft: SessionDraft | null): PersistWriteResult => {
+  if (!activeDraft || !isSessionProgressStatus(sessionStatus)) {
+    return clearPersistedRuntime();
   }
 
-  savePersistedRuntime({
+  return savePersistedRuntime({
     sessionStatus,
     activeDraft,
     updatedAt: new Date().toISOString()
@@ -80,10 +96,15 @@ const persistRuntime = (sessionStatus: SessionStatus, activeDraft: SessionDraft 
 
 export const useAppStore = create<AppState>((set, get) => ({
   hydrated: false,
+  lastError: null,
   settings: DEFAULT_SETTINGS,
   sessions: [],
   sessionStatus: "IDLE",
   activeDraft: null,
+
+  clearError: () => {
+    set({ lastError: null });
+  },
 
   hydrateFromStorage: () => {
     const loaded = loadPersistedStore();
@@ -93,6 +114,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessions: loaded?.sessions ?? [],
       sessionStatus: runtime?.sessionStatus ?? "IDLE",
       activeDraft: runtime?.activeDraft ?? null,
+      lastError: null,
       hydrated: true
     });
   },
@@ -109,11 +131,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       rotationCorrectCount: 0
     };
 
+    const runtimeResult = persistRuntime("INTRO", draft);
     set({
       sessionStatus: "INTRO",
-      activeDraft: draft
+      activeDraft: draft,
+      lastError: toError(runtimeResult)
     });
-    persistRuntime("INTRO", draft);
   },
 
   acceptTerms: () => {
@@ -121,8 +144,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (current.sessionStatus !== "INTRO" || !current.activeDraft) {
       return;
     }
-    set({ sessionStatus: "REACTIVATION" });
-    persistRuntime("REACTIVATION", current.activeDraft);
+
+    const runtimeResult = persistRuntime("REACTIVATION", current.activeDraft);
+    set({
+      sessionStatus: "REACTIVATION",
+      lastError: toError(runtimeResult)
+    });
   },
 
   finishReactivation: () => {
@@ -130,8 +157,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (current.sessionStatus !== "REACTIVATION" || !current.activeDraft) {
       return;
     }
-    set({ sessionStatus: "ROTATION_TASK" });
-    persistRuntime("ROTATION_TASK", current.activeDraft);
+
+    const runtimeResult = persistRuntime("ROTATION_TASK", current.activeDraft);
+    set({
+      sessionStatus: "ROTATION_TASK",
+      lastError: toError(runtimeResult)
+    });
   },
 
   setRotationResult: (answers, correctCount) => {
@@ -140,18 +171,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    set({
-      activeDraft: {
-        ...current.activeDraft,
-        rotationAnswers: answers,
-        rotationCorrectCount: Math.max(0, Math.floor(correctCount))
-      },
-      sessionStatus: "TETRIS_PLAY"
-    });
-    persistRuntime("TETRIS_PLAY", {
+    const nextDraft: SessionDraft = {
       ...current.activeDraft,
       rotationAnswers: answers,
       rotationCorrectCount: Math.max(0, Math.floor(correctCount))
+    };
+
+    const runtimeResult = persistRuntime("TETRIS_PLAY", nextDraft);
+    set({
+      activeDraft: nextDraft,
+      sessionStatus: "TETRIS_PLAY",
+      lastError: toError(runtimeResult)
     });
   },
 
@@ -165,11 +195,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...current.activeDraft,
       tetris: stats
     };
+
+    const runtimeResult = persistRuntime("CHECKOUT", nextDraft);
     set({
       activeDraft: nextDraft,
-      sessionStatus: "CHECKOUT"
+      sessionStatus: "CHECKOUT",
+      lastError: toError(runtimeResult)
     });
-    persistRuntime("CHECKOUT", nextDraft);
   },
 
   saveSessionCheck: (input) => {
@@ -199,34 +231,34 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
 
     const sessions = [record, ...current.sessions];
+    const saveResult = persistStore({ settings: current.settings, sessions });
+    const clearRuntimeResult = clearPersistedRuntime();
+
     set({
       sessions,
       activeDraft: null,
-      sessionStatus: "COMPLETED"
+      sessionStatus: "COMPLETED",
+      lastError: mergeErrors(toError(saveResult), toError(clearRuntimeResult))
     });
-
-    persist({
-      settings: current.settings,
-      sessions
-    });
-    clearPersistedRuntime();
   },
 
   cancelSession: (reason = "user") => {
     void reason;
+    const clearResult = clearPersistedRuntime();
     set({
       sessionStatus: "CANCELLED",
-      activeDraft: null
+      activeDraft: null,
+      lastError: toError(clearResult)
     });
-    clearPersistedRuntime();
   },
 
   discardSession: () => {
+    const clearResult = clearPersistedRuntime();
     set({
       sessionStatus: "IDLE",
-      activeDraft: null
+      activeDraft: null,
+      lastError: toError(clearResult)
     });
-    clearPersistedRuntime();
   },
 
   updateReactivationSec: (seconds) => {
@@ -235,8 +267,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...current.settings,
       reactivationSec: seconds
     };
-    set({ settings });
-    persist({ settings, sessions: current.sessions });
+    const saveResult = persistStore({ settings, sessions: current.sessions });
+
+    set({
+      settings,
+      lastError: toError(saveResult)
+    });
   },
 
   updateEmergencyNote: (note) => {
@@ -245,25 +281,35 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...current.settings,
       emergencyNote: note
     };
-    set({ settings });
-    persist({ settings, sessions: current.sessions });
+    const saveResult = persistStore({ settings, sessions: current.sessions });
+
+    set({
+      settings,
+      lastError: toError(saveResult)
+    });
   },
 
   clearAllData: () => {
+    const saveResult = persistStore({ settings: DEFAULT_SETTINGS, sessions: [] });
+    const clearRuntimeResult = clearPersistedRuntime();
+
     set({
       settings: DEFAULT_SETTINGS,
       sessions: [],
       activeDraft: null,
-      sessionStatus: "IDLE"
+      sessionStatus: "IDLE",
+      lastError: mergeErrors(toError(saveResult), toError(clearRuntimeResult))
     });
-    persist({ settings: DEFAULT_SETTINGS, sessions: [] });
-    clearPersistedRuntime();
   },
 
   deleteSession: (id) => {
     const current = get();
     const sessions = current.sessions.filter((session) => session.id !== id);
-    set({ sessions });
-    persist({ settings: current.settings, sessions });
+    const saveResult = persistStore({ settings: current.settings, sessions });
+
+    set({
+      sessions,
+      lastError: toError(saveResult)
+    });
   }
 }));

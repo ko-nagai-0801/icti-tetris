@@ -424,6 +424,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="左へ移動"
+          data-testid="tetris-move-left"
           onClick={() => applyEngine(moveHorizontal(engineRef.current, -1))}
         >
           ←
@@ -432,6 +433,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="右へ移動"
+          data-testid="tetris-move-right"
           onClick={() => applyEngine(moveHorizontal(engineRef.current, 1))}
         >
           →
@@ -440,6 +442,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="ソフトドロップ"
+          data-testid="tetris-soft-drop"
           onClick={() => applyEngine(stepGravity(engineRef.current))}
         >
           ↓
@@ -448,6 +451,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="ハードドロップ"
+          data-testid="tetris-hard-drop"
           onClick={() => applyEngine(hardDrop(engineRef.current))}
         >
           DROP
@@ -456,6 +460,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="左回転"
+          data-testid="tetris-rotate-ccw"
           onClick={() => applyEngine(rotateActive(engineRef.current, "CCW"))}
         >
           ↺ 左回転
@@ -464,6 +469,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="右回転"
+          data-testid="tetris-rotate-cw"
           onClick={() => applyEngine(rotateActive(engineRef.current, "CW"))}
         >
           ↻ 右回転
@@ -472,6 +478,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           type="button"
           className="btn-outline"
           aria-label="ホールド"
+          data-testid="tetris-hold"
           onClick={() => applyEngine(holdActive(engineRef.current))}
         >
           HOLD
@@ -494,7 +501,7 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
       </div>
 
       <div className="row">
-        <button type="button" className="btn-outline" onClick={() => finish("manual")}>
+        <button type="button" className="btn-outline" onClick={() => finish("manual")} data-testid="tetris-finish-button">
           手動で終了して次へ
         </button>
       </div>
