@@ -260,24 +260,74 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
       </div>
 
       <div className="tetris-controls">
-        <button type="button" className="btn-outline" onClick={() => applyEngine(moveHorizontal(engineRef.current, -1))}>
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="左へ移動"
+          onClick={() => applyEngine(moveHorizontal(engineRef.current, -1))}
+        >
           ←
         </button>
-        <button type="button" className="btn-outline" onClick={() => applyEngine(moveHorizontal(engineRef.current, 1))}>
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="右へ移動"
+          onClick={() => applyEngine(moveHorizontal(engineRef.current, 1))}
+        >
           →
         </button>
-        <button type="button" className="btn-outline" onClick={() => applyEngine(stepGravity(engineRef.current))}>
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="ソフトドロップ"
+          onClick={() => applyEngine(stepGravity(engineRef.current))}
+        >
           ↓
         </button>
-        <button type="button" className="btn-outline" onClick={() => applyEngine(hardDrop(engineRef.current))}>
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="ハードドロップ"
+          onClick={() => applyEngine(hardDrop(engineRef.current))}
+        >
           DROP
         </button>
-        <button type="button" className="btn-outline" onClick={() => applyEngine(rotateActive(engineRef.current, "CW"))}>
-          回転
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="左回転"
+          onClick={() => applyEngine(rotateActive(engineRef.current, "CCW"))}
+        >
+          ↺ 左回転
         </button>
-        <button type="button" className="btn-outline" onClick={() => applyEngine(holdActive(engineRef.current))}>
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="右回転"
+          onClick={() => applyEngine(rotateActive(engineRef.current, "CW"))}
+        >
+          ↻ 右回転
+        </button>
+        <button
+          type="button"
+          className="btn-outline"
+          aria-label="ホールド"
+          onClick={() => applyEngine(holdActive(engineRef.current))}
+        >
           HOLD
         </button>
+      </div>
+
+      <div className="tetris-guide">
+        <div className="tetris-guide-row">
+          <strong>キーボード:</strong> ←/→ 移動, ↓ ソフトドロップ, Space ハードドロップ
+        </div>
+        <div className="tetris-guide-row">
+          <strong>回転:</strong> Z = 左回転, X or ↑ = 右回転, C = HOLD
+        </div>
+        <div className="tetris-guide-row">
+          <strong>スマホ:</strong> 画面下のボタン操作を推奨（iOS想定）
+        </div>
       </div>
 
       <div className="row">
@@ -285,8 +335,6 @@ export function TetrisCanvas({ targetSec, onFinish }: TetrisCanvasProps) {
           手動で終了して次へ
         </button>
       </div>
-
-      <p className="help">キー操作: ← → ↓ Space Z X C</p>
     </div>
   );
 }

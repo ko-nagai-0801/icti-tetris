@@ -37,7 +37,11 @@ a {
 .page {
   width: min(980px, 100% - 2rem);
   margin: 0 auto;
-  padding: 1.2rem 0 3rem;
+  padding:
+    calc(1.2rem + env(safe-area-inset-top))
+    env(safe-area-inset-right)
+    calc(3rem + env(safe-area-inset-bottom))
+    env(safe-area-inset-left);
 }
 
 .page-header {
@@ -115,6 +119,7 @@ button,
   font-size: 0.95rem;
   cursor: pointer;
   transition: transform 0.12s ease, opacity 0.12s ease;
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -213,6 +218,21 @@ input[type="range"] {
   margin: 0;
 }
 
+.timer-progress {
+  width: min(420px, 100%);
+  height: 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.timer-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7ab7a8 0%, var(--accent) 100%);
+  transition: width 0.2s ease;
+}
+
 .mini-shape {
   display: inline-grid;
   border: 1px solid var(--line);
@@ -240,6 +260,9 @@ input[type="range"] {
 }
 
 .rotation-option {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
@@ -264,17 +287,19 @@ input[type="range"] {
   background: #0f172a;
   width: min(100%, 410px);
   height: auto;
+  touch-action: manipulation;
 }
 
 .tetris-controls {
   display: grid;
-  grid-template-columns: repeat(6, minmax(44px, 1fr));
+  grid-template-columns: repeat(4, minmax(72px, 1fr));
   gap: 0.5rem;
   width: min(100%, 410px);
 }
 
 .tetris-controls button {
-  padding: 0.55rem;
+  padding: 0.55rem 0.45rem;
+  min-height: 48px;
 }
 
 .stats-grid {
@@ -311,6 +336,21 @@ input[type="range"] {
   color: var(--muted);
 }
 
+.tetris-guide {
+  width: min(100%, 620px);
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: #fff;
+}
+
+.tetris-guide-row {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 @media (max-width: 680px) {
   .page {
     width: min(980px, 100% - 1rem);
@@ -323,5 +363,10 @@ input[type="range"] {
   .mini-cell {
     width: 12px;
     height: 12px;
+  }
+
+  .tetris-controls {
+    grid-template-columns: repeat(3, minmax(82px, 1fr));
+    width: min(100%, 100%);
   }
 }

@@ -92,11 +92,28 @@ export default function SessionPage() {
 
   if (status === "INTRO") {
     const allChecked = introChecks.okToStop && introChecks.dontDig && introChecks.askHelp;
+    const checkedCount = Number(introChecks.okToStop) + Number(introChecks.dontDig) + Number(introChecks.askHelp);
 
     return (
       <main className="page">
         <SessionShell title="セッション導入" stepLabel="1 / 5: 注意事項" onCancel={handleCancel}>
           <div className="card">
+            <div className="row" style={{ justifyContent: "space-between", marginBottom: "0.6rem" }}>
+              <span className="badge">確認済み {checkedCount} / 3</span>
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() =>
+                  setIntroChecks({
+                    okToStop: !allChecked,
+                    dontDig: !allChecked,
+                    askHelp: !allChecked
+                  })
+                }
+              >
+                {allChecked ? "すべて解除" : "すべてチェック"}
+              </button>
+            </div>
             <div className="check-list">
               <label className="check-item" htmlFor="check-stop">
                 <input
@@ -155,8 +172,13 @@ export default function SessionPage() {
   if (status === "REACTIVATION") {
     return (
       <main className="page">
-        <SessionShell title="再活性化" stepLabel="2 / 5: 20〜40秒" onCancel={handleCancel}>
-          <ReactivationTimer seconds={draft.reactivationSec} onDone={finishReactivation} onSkip={finishReactivation} />
+        <SessionShell title="短い思い出し（再活性化）" stepLabel="2 / 5: 20〜40秒の準備" onCancel={handleCancel}>
+          <ReactivationTimer
+            key={draft.reactivationSec}
+            seconds={draft.reactivationSec}
+            onDone={finishReactivation}
+            onSkip={finishReactivation}
+          />
         </SessionShell>
       </main>
     );

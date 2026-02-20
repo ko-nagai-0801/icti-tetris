@@ -1,12 +1,13 @@
 export type RotationOption = {
   id: string;
+  label: string;
   matrix: number[][];
 };
 
 export type RotationQuestion = {
   id: string;
   title: string;
-  prompt: string;
+  targetLabel: string;
   base: number[][];
   options: RotationOption[];
   correctOptionId: string;
@@ -38,6 +39,10 @@ const rotateTimes = (matrix: number[][], times: number): number[][] => {
   return out;
 };
 
+const mirrorHorizontal = (matrix: number[][]): number[][] => {
+  return matrix.map((row) => [...row].reverse());
+};
+
 const L_SHAPE = [
   [1, 0, 0],
   [1, 1, 1],
@@ -56,36 +61,80 @@ const T_SHAPE = [
   [0, 0, 0]
 ];
 
-const buildQuestion = (
-  id: string,
-  title: string,
-  base: number[][],
-  targetTurns: number,
-  optionTurns: [number, number, number, number]
-): RotationQuestion => {
-  const options: RotationOption[] = optionTurns.map((turns, index) => {
+type QuestionOption = {
+  matrix: number[][];
+  isCorrect: boolean;
+};
+
+const buildQuestion = ({
+  id,
+  title,
+  targetLabel,
+  base,
+  options
+}: {
+  id: string;
+  title: string;
+  targetLabel: string;
+  base: number[][];
+  options: [QuestionOption, QuestionOption, QuestionOption, QuestionOption];
+}): RotationQuestion => {
+  const normalizedOptions: RotationOption[] = options.map((option, index) => {
     return {
       id: `${id}_opt_${index + 1}`,
-      matrix: rotateTimes(base, turns)
+      label: String.fromCharCode(65 + index),
+      matrix: clone(option.matrix)
     };
   });
-
-  const correctOptionIndex = optionTurns.findIndex((turns) => turns === targetTurns);
+  const correctOptionIndex = options.findIndex((option) => option.isCorrect);
 
   return {
     id,
     title,
-    prompt: "左の形を時計回りに回したとき、指定の向きになる選択肢を選んでください。",
+    targetLabel,
     base: clone(base),
-    options,
-    correctOptionId: options[correctOptionIndex]?.id ?? options[0]?.id ?? ""
+    options: normalizedOptions,
+    correctOptionId: normalizedOptions[correctOptionIndex]?.id ?? normalizedOptions[0]?.id ?? ""
   };
 };
 
 const QUESTIONS: RotationQuestion[] = [
-  buildQuestion("q1", "問題1: L字を90°回転", L_SHAPE, 1, [1, 0, 2, 3]),
-  buildQuestion("q2", "問題2: Z字を180°回転", Z_SHAPE, 2, [3, 2, 1, 0]),
-  buildQuestion("q3", "問題3: T字を270°回転", T_SHAPE, 3, [0, 3, 1, 2])
+  buildQuestion({
+    id: "q1",
+    title: "問題1",
+    targetLabel: "L字を右に90°回転した結果を選ぶ",
+    base: L_SHAPE,
+    options: [
+      { matrix: rotateTimes(L_SHAPE, 0), isCorrect: false },
+      { matrix: rotateTimes(L_SHAPE, 3), isCorrect: false },
+      { matrix: rotateTimes(L_SHAPE, 1), isCorrect: true },
+      { matrix: rotateTimes(L_SHAPE, 2), isCorrect: false }
+    ]
+  }),
+  buildQuestion({
+    id: "q2",
+    title: "問題2",
+    targetLabel: "Z字を右に90°回転した結果を選ぶ",
+    base: Z_SHAPE,
+    options: [
+      { matrix: rotateTimes(Z_SHAPE, 0), isCorrect: false },
+      { matrix: mirrorHorizontal(rotateTimes(Z_SHAPE, 1)), isCorrect: false },
+      { matrix: rotateTimes(Z_SHAPE, 1), isCorrect: true },
+      { matrix: mirrorHorizontal(rotateTimes(Z_SHAPE, 0)), isCorrect: false }
+    ]
+  }),
+  buildQuestion({
+    id: "q3",
+    title: "問題3",
+    targetLabel: "T字を右に270°回転した結果を選ぶ",
+    base: T_SHAPE,
+    options: [
+      { matrix: rotateTimes(T_SHAPE, 2), isCorrect: false },
+      { matrix: rotateTimes(T_SHAPE, 3), isCorrect: true },
+      { matrix: rotateTimes(T_SHAPE, 0), isCorrect: false },
+      { matrix: rotateTimes(T_SHAPE, 1), isCorrect: false }
+    ]
+  })
 ];
 
 export const getRotationQuestions = (count: number): RotationQuestion[] => {

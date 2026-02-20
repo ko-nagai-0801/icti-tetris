@@ -70,7 +70,7 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
         </span>
       </div>
 
-      <p className="help">{question.prompt}</p>
+      <p className="help">指示: {question.targetLabel}</p>
 
       <div className="row" style={{ alignItems: "flex-start" }}>
         <div className="column" style={{ minWidth: 140 }}>
@@ -89,6 +89,7 @@ export function RotationTask({ questionCount, onComplete }: RotationTaskProps) {
               className={`rotation-option ${isActive ? "active" : ""}`}
               onClick={() => setSelected(option.id)}
             >
+              <strong>{option.label}</strong>
               <ShapeMatrix matrix={option.matrix} />
             </button>
           );
